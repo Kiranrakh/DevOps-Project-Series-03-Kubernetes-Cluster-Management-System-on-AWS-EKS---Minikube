@@ -1,0 +1,127 @@
+#########################################
+# 🔥 BUILD & DEPLOY KUBERNETES CLUSTER ON AWS EKS
+#########################################
+
+# ✅ Step 1: Install AWS CLI, eksctl, kubectl
+
+# AWS CLI (Windows: install using MSI or winget)
+winget install -e --id Amazon.AWSCLI
+
+# eksctl (EKS management CLI)
+choco install eksctl
+
+# kubectl (Kubernetes CLI)
+choco install kubernetes-cli
+
+# Confirm versions
+aws --version
+eksctl version
+kubectl version --client
+
+#########################################
+# ✅ Step 2: Create an EKS Cluster
+#########################################
+
+# Create EKS cluster (takes a few minutes)
+eksctl create cluster --name cluster-project-3 --region ap-south-1 --nodes 2
+
+# Get cluster nodes
+kubectl get nodes
+
+#########################################
+# ✅ Step 3: Deploy Sample App to EKS
+#########################################
+
+# Create deployment with Docker image
+kubectl create deployment myapp --image=kiran22222/app1
+
+# Get pods and node details
+kubectl get pods -o wide
+kubectl get deployments
+kubectl describe nodes
+
+# Expose the app to the internet (creates LoadBalancer service)
+kubectl expose deployment myapp --type=LoadBalancer --port=80
+
+# Scale the deployment
+kubectl scale deployment myapp --replicas=4
+
+# Enable autoscaling based on CPU
+kubectl autoscale deployment myapp --cpu-percent=50 --min=2 --max=10
+
+# Watch Horizontal Pod Autoscaler in real time
+kubectl get hpa -w
+
+# View resource usage (if metrics-server is installed)
+kubectl top pod
+
+#########################################
+# ✅ Step 4: Deployment using YAML
+#########################################
+
+# Generate base YAML file for deployment
+kubectl create deployment myapp --image=kiran22222/myapp --dry-run=client -o yaml > mydeployment.yml
+
+# 🔧 Edit 'mydeployment.yml':
+# Under containers → resources:
+#   resources:
+#     requests:
+#       cpu: "100m"
+#     limits:
+#       cpu: "500m"
+
+# Apply deployment
+kubectl apply -f mydeployment.yml
+
+# View pods and detailed info
+kubectl get pods
+kubectl describe pod <pod-name>
+kubectl get deployment myapp -o wide
+
+# Delete deployment & service if needed
+kubectl delete deployment myapp
+kubectl delete svc myapp
+
+#########################################
+# ✅ Step 5: Setup Kubernetes Dashboard (Optional)
+#########################################
+
+# Install dashboard using official YAML
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+
+# Create access token or use kubectl proxy to open dashboard
+kubectl proxy
+
+#########################################
+# ✅ Step 6: Monitoring with Prometheus & Grafana via Helm
+#########################################
+
+# Download and install Helm
+winget install Helm.Helm
+
+# Add Prometheus community Helm repo
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+# Create namespace for monitoring
+kubectl create namespace monitoring
+
+# Install Prometheus + Grafana in monitoring namespace
+helm install monitoring prometheus-community/kube-prometheus-stack --namespace monitoring
+
+# Wait and check service
+kubectl get svc -n monitoring
+
+# Forward Grafana port to localhost:3000
+kubectl port-forward svc/monitoring-grafana -n monitoring 3000:80
+
+# Login to Grafana: username: admin, password: prom-operator
+
+# You can now access dashboards and monitor EKS metrics!
+
+#########################################
+# ✅ Optional Cleanup
+#########################################
+
+# Delete EKS cluster
+eksctl delete cluster --name cluster-project-3 --region ap-south-1
