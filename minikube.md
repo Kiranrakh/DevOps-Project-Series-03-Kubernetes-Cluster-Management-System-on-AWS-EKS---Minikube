@@ -164,7 +164,7 @@ minikube stop
 │   ├── service.yaml
 │   └── hpa.yaml
 │   └── prometheus-grafana-install.sh
-└── README-minikube.md
+└── minikube.md
 ```
 
 ---
